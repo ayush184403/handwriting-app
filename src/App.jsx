@@ -3,6 +3,7 @@ import Header from './components/Header'
 import InputPanel from './components/InputPanel'
 import PreviewPanel from './components/PreviewPanel'
 import UpgradeModal from './components/UpgradeModal'
+import MobileTabs from './components/MobileTabs'
 import { rewriteAsStudent } from './services/gemini'
 import { getUsage, incrementUsage, saveAssignment, canGenerate } from './services/supabase'
 
@@ -12,13 +13,13 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [subject, setSubject] = useState('General')
-
-  // Usage tracking state
   const [assignmentsUsed, setAssignmentsUsed] = useState(0)
   const [assignmentsLimit, setAssignmentsLimit] = useState(3)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
-  // Load usage from Supabase when app first opens
+  // Mobile tab state — 'input' or 'preview'
+  const [activeTab, setActiveTab] = useState('input')
+
   useEffect(() => {
     async function loadUsage() {
       try {
@@ -35,7 +36,6 @@ function App() {
   async function handleGenerate() {
     if (!text.trim()) return
 
-    // Check if user has assignments left
     const allowed = await canGenerate()
     if (!allowed) {
       setShowUpgradeModal(true)
@@ -45,18 +45,15 @@ function App() {
     setIsLoading(true)
     setError('')
 
+    // On mobile, auto-switch to preview tab when generation starts
+    setActiveTab('preview')
+
     try {
-      // 1. Rewrite with Gemini
       const result = await rewriteAsStudent(text, subject)
       setRewrittenText(result)
-
-      // 2. Increment usage counter in Supabase
       const updatedUsage = await incrementUsage()
       setAssignmentsUsed(updatedUsage.assignments_used)
-
-      // 3. Save assignment to database
       await saveAssignment(text, result, subject)
-
     } catch (err) {
       setError(err.message)
     } finally {
@@ -72,8 +69,24 @@ function App() {
         assignmentsLimit={assignmentsLimit}
       />
 
+      {/* Mobile tab bar — only visible on small screens */}
+      <MobileTabs
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        hasOutput={!!rewrittenText}
+      />
+
       <main className="flex flex-1 overflow-hidden">
-        <div className="w-1/2 flex flex-col overflow-hidden">
+
+        {/* Input panel:
+            - Desktop: always visible, takes left half
+            - Mobile: only visible when activeTab === 'input' */}
+        <div className={`
+          flex flex-col overflow-hidden
+          w-full md:w-1/2
+          ${activeTab === 'input' ? 'flex' : 'hidden'}
+          md:flex
+        `}>
           <InputPanel
             text={text}
             setText={setText}
@@ -85,7 +98,16 @@ function App() {
             assignmentsLimit={assignmentsLimit}
           />
         </div>
-        <div className="w-1/2 flex flex-col overflow-hidden">
+
+        {/* Preview panel:
+            - Desktop: always visible, takes right half
+            - Mobile: only visible when activeTab === 'preview' */}
+        <div className={`
+          flex flex-col overflow-hidden
+          w-full md:w-1/2
+          ${activeTab === 'preview' ? 'flex' : 'hidden'}
+          md:flex
+        `}>
           <PreviewPanel
             text={text}
             rewrittenText={rewrittenText}
@@ -93,9 +115,9 @@ function App() {
             error={error}
           />
         </div>
+
       </main>
 
-      {/* Upgrade modal — shown when limit is hit */}
       {showUpgradeModal && (
         <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
       )}
