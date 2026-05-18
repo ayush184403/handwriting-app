@@ -1,7 +1,7 @@
 import HandwritingCanvas from './HandwritingCanvas'
 import { downloadAsPDF } from '../services/pdf'
 
-function PreviewPanel({ text, rewrittenText, isLoading, error }) {
+function PreviewPanel({ text, rewrittenText, isLoading, error, selectedStyle }) {
 
   function handleCopy() {
     if (rewrittenText) {
@@ -85,9 +85,9 @@ function PreviewPanel({ text, rewrittenText, isLoading, error }) {
           </div>
         )}
 
-        {!isLoading && rewrittenText && (
-          <HandwritingCanvas text={rewrittenText} />
-        )}
+       {!isLoading && rewrittenText && (
+  <HandwritingCanvas text={rewrittenText} styleId={selectedStyle} />
+)}
 
       </div>
 

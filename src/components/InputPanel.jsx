@@ -1,10 +1,11 @@
-function InputPanel({ text, setText, subject, setSubject, onGenerate, isLoading, assignmentsUsed, assignmentsLimit }) {
+import StylePicker from './StylePicker'
+
+function InputPanel({ text, setText, subject, setSubject, selectedStyle, setSelectedStyle, onGenerate, isLoading, assignmentsUsed, assignmentsLimit }) {
   const subjects = ['General', 'English', 'Science', 'History', 'Maths', 'Other']
 
   return (
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
 
-      {/* Panel header — hidden on mobile (tab bar replaces it) */}
       <div className="hidden md:block px-5 py-4 border-b border-gray-100">
         <h2 className="font-semibold text-gray-800">Your Assignment</h2>
         <p className="text-xs text-gray-400 mt-0.5">Paste or type the text you want handwritten</p>
@@ -26,6 +27,12 @@ function InputPanel({ text, setText, subject, setSubject, onGenerate, isLoading,
           </button>
         ))}
       </div>
+
+      {/* Style picker */}
+      <StylePicker
+        selectedStyle={selectedStyle}
+        setSelectedStyle={setSelectedStyle}
+      />
 
       {/* Textarea */}
       <textarea

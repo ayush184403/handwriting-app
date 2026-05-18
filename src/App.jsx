@@ -13,11 +13,10 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [subject, setSubject] = useState('General')
+  const [selectedStyle, setSelectedStyle] = useState('neat')
   const [assignmentsUsed, setAssignmentsUsed] = useState(0)
   const [assignmentsLimit, setAssignmentsLimit] = useState(3)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-
-  // Mobile tab state — 'input' or 'preview'
   const [activeTab, setActiveTab] = useState('input')
 
   useEffect(() => {
@@ -35,19 +34,14 @@ function App() {
 
   async function handleGenerate() {
     if (!text.trim()) return
-
     const allowed = await canGenerate()
     if (!allowed) {
       setShowUpgradeModal(true)
       return
     }
-
     setIsLoading(true)
     setError('')
-
-    // On mobile, auto-switch to preview tab when generation starts
     setActiveTab('preview')
-
     try {
       const result = await rewriteAsStudent(text, subject)
       setRewrittenText(result)
@@ -63,65 +57,43 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-
       <Header
         assignmentsUsed={assignmentsUsed}
         assignmentsLimit={assignmentsLimit}
       />
-
-      {/* Mobile tab bar — only visible on small screens */}
       <MobileTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         hasOutput={!!rewrittenText}
       />
-
       <main className="flex flex-1 overflow-hidden">
-
-        {/* Input panel:
-            - Desktop: always visible, takes left half
-            - Mobile: only visible when activeTab === 'input' */}
-        <div className={`
-          flex flex-col overflow-hidden
-          w-full md:w-1/2
-          ${activeTab === 'input' ? 'flex' : 'hidden'}
-          md:flex
-        `}>
+        <div className={`flex flex-col overflow-hidden w-full md:w-1/2 ${activeTab === 'input' ? 'flex' : 'hidden'} md:flex`}>
           <InputPanel
             text={text}
             setText={setText}
             subject={subject}
             setSubject={setSubject}
+            selectedStyle={selectedStyle}
+            setSelectedStyle={setSelectedStyle}
             onGenerate={handleGenerate}
             isLoading={isLoading}
             assignmentsUsed={assignmentsUsed}
             assignmentsLimit={assignmentsLimit}
           />
         </div>
-
-        {/* Preview panel:
-            - Desktop: always visible, takes right half
-            - Mobile: only visible when activeTab === 'preview' */}
-        <div className={`
-          flex flex-col overflow-hidden
-          w-full md:w-1/2
-          ${activeTab === 'preview' ? 'flex' : 'hidden'}
-          md:flex
-        `}>
+        <div className={`flex flex-col overflow-hidden w-full md:w-1/2 ${activeTab === 'preview' ? 'flex' : 'hidden'} md:flex`}>
           <PreviewPanel
             text={text}
             rewrittenText={rewrittenText}
             isLoading={isLoading}
             error={error}
+            selectedStyle={selectedStyle}
           />
         </div>
-
       </main>
-
       {showUpgradeModal && (
         <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
       )}
-
     </div>
   )
 }
