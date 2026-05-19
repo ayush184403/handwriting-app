@@ -5,7 +5,7 @@ import PreviewPanel from './components/PreviewPanel'
 import UpgradeModal from './components/UpgradeModal'
 import MobileTabs from './components/MobileTabs'
 import { rewriteAsStudent } from './services/gemini'
-import { getUsage, incrementUsage, saveAssignment, canGenerate } from './services/supabase'
+import { getUsage, incrementUsage, saveAssignment, canGenerate, getDeviceIdPublic } from './services/supabase'
 
 function App() {
   const [text, setText] = useState('')
@@ -20,17 +20,22 @@ function App() {
   const [activeTab, setActiveTab] = useState('input')
 
   useEffect(() => {
-    async function loadUsage() {
-      try {
-        const usage = await getUsage()
-        setAssignmentsUsed(usage.assignments_used)
-        setAssignmentsLimit(usage.assignments_limit)
-      } catch (err) {
-        console.error('Could not load usage:', err)
-      }
+  async function loadUsage() {
+    try {
+      const usage = await getUsage()
+      setAssignmentsUsed(usage.assignments_used)
+      setAssignmentsLimit(usage.assignments_limit)
+    } catch (err) {
+      console.error('Could not load usage:', err)
     }
-    loadUsage()
-  }, [])
+  }
+  loadUsage()
+
+  // Listen for header upgrade button clicks
+  const handler = () => setShowUpgradeModal(true)
+  window.addEventListener('openUpgradeModal', handler)
+  return () => window.removeEventListener('openUpgradeModal', handler)
+}, [])
 
   async function handleGenerate() {
     if (!text.trim()) return
@@ -53,6 +58,12 @@ function App() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Called by UpgradeModal after successful payment
+  function handleUpgradeSuccess(updatedUsage) {
+    setAssignmentsUsed(updatedUsage.assignments_used)
+    setAssignmentsLimit(updatedUsage.assignments_limit)
   }
 
   return (
@@ -91,8 +102,13 @@ function App() {
           />
         </div>
       </main>
+
       {showUpgradeModal && (
-        <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
+        <UpgradeModal
+          onClose={() => setShowUpgradeModal(false)}
+          onUpgradeSuccess={handleUpgradeSuccess}
+          deviceId={getDeviceIdPublic()}
+        />
       )}
     </div>
   )

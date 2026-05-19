@@ -45,9 +45,12 @@ function Header({ assignmentsUsed, assignmentsLimit }) {
           {isEmpty ? '0 left' : `${remaining} left`}
         </div>
 
-        <button className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2 rounded-lg transition-colors whitespace-nowrap">
-          <span className="hidden md:inline">Upgrade </span>₹99/mo
-        </button>
+        <button
+  onClick={() => window.dispatchEvent(new CustomEvent('openUpgradeModal'))}
+  className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2 rounded-lg transition-colors whitespace-nowrap"
+>
+  <span className="hidden md:inline">Upgrade </span>₹99/mo
+</button>
 
       </div>
     </header>

@@ -26,27 +26,26 @@ function getDeviceId() {
 export async function getUsage() {
   const deviceId = getDeviceId()
 
-  // Try to find an existing record for this device
   const { data, error } = await supabase
     .from('usage_tracking')
     .select('*')
     .eq('device_id', deviceId)
-    .single()
+    .maybeSingle()
 
-  if (error && error.code === 'PGRST116') {
-    // No record found — this is a new device, create one
-    const { data: newData, error: insertError } = await supabase
-      .from('usage_tracking')
-      .insert({ device_id: deviceId, assignments_used: 0, assignments_limit: 3 })
-      .select()
-      .single()
+  if (data) return data
 
-    if (insertError) throw insertError
-    return newData
-  }
+  // No record found — try to create one
+  const { data: newData, error: insertError } = await supabase
+    .from('usage_tracking')
+    .upsert(
+      { device_id: deviceId, assignments_used: 0, assignments_limit: 3 },
+      { onConflict: 'device_id' }   // if it already exists, just return it
+    )
+    .select()
+    .maybeSingle()
 
-  if (error) throw error
-  return data
+  if (insertError) throw insertError
+  return newData
 }
 
 // ─── INCREMENT USAGE ──────────────────────────────────────────────────────────
@@ -93,4 +92,8 @@ export async function saveAssignment(originalText, rewrittenText, subject) {
 export async function canGenerate() {
   const usage = await getUsage()
   return usage.assignments_used < usage.assignments_limit
+}
+// Export so App.jsx can pass it to payment flow
+export function getDeviceIdPublic() {
+  return localStorage.getItem('writeai_device_id') || ''
 }
